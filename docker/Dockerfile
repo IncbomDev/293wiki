@@ -1,2 +1,11 @@
-docker run --log-driver none -v db-data:/var/lib/postgresql/data -e POSTGRES_DB=wiki -e POSTGRES_PASSWORD=wikijsrocks -e POSTGRES_USER=wikijs postgres:11-alpine 
-docker run -p 80:3000 -e DB_TYPE=postgres -e DB_HOST=db -e DB_PORT=5432 -e DB_USER=wikijs -e DB_PASS=wikijsrocks -e DB_NAME=wiki ghcr.io/requarks/wiki:2 
+CMD [mkdir -p /etc/wiki]
+CMD [openssl rand -base64 32 > /etc/wiki/.db-secret]
+CMD [docker network create wikinet]
+CMD [docker volume create pgdata]
+CMD [docker create --name=db -e POSTGRES_DB=wiki -e POSTGRES_USER=wiki -e POSTGRES_PASSWORD_FILE=/etc/wiki/.db-secret -v /etc/wiki/.db-secret:/etc/wiki/.db-secret:ro -v pgdata:/var/lib/postgresql/data --restart=unless-stopped -h db --network=wikinet postgres:11]
+CMD [docker create --name=wiki -e DB_TYPE=postgres -e DB_HOST=db -e DB_PORT=5432 -e DB_PASS_FILE=/etc/wiki/.db-secret -v /etc/wiki/.db-secret:/etc/wiki/.db-secret:ro -e DB_USER=wiki -e DB_NAME=wiki -e UPGRADE_COMPANION=1 --restart=unless-stopped -h wiki --network=wikinet -p 80:3000 -p 443:3443 ghcr.io/requarks/wiki:2]
+CMD [docker create --name=wiki-update-companion -v /var/run/docker.sock:/var/run/docker.sock:ro --restart=unless-stopped -h wiki-update-companion --network=wikinet ghcr.io/requarks/wiki-update-companion:latest]
+CMD [docker start db]
+CMD [docker start wiki]
+CMD [docker start wiki-update-companion]
+
