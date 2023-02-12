@@ -1,32 +1,5 @@
-
-name: Deploy with Docker Compose
-
-
-on:
-  push:
-    branches:
-      - main
-
-env:
-  DOCKER_COMPOSE_FILE: docker-compose.yml
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Set up Docker
-      uses: docker/setup-docker@v2
-      with:
-        docker-version: 20.10.2
-
-    - name: Deploy with Docker Compose
-      run: |
-        docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} up -d
+version: "3"
 services:
-
 
   db:
     image: postgres:11-alpine
